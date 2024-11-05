@@ -13,7 +13,16 @@ int main(void)
 {
     SYSCTL_RCGC2_R |= 0x00000020;       /* enable clock to GPIOF */
 
-    INIT_GPIO_PORTF_REGISTERS();
+    GPIO_PORTF_LOCK_R = 0x4C4F434B;     /* unlock commit register */
+    GPIO_PORTF_CR_R = 0x1F;             /* make PORTF configurable */
+    GPIO_PORTF_DEN_R = 0x1F;            /* set PORTF pins 4 : 0 pins */
+    GPIO_PORTF_DIR_R = 0x0E;            /*  */
+    GPIO_PORTF_PUR_R = 0x11;            /* PORTF0 and PORTF4 are pulled up */
+
+    NVIC_EN0_R = 0x40000000; // 30th bit controls PORTF
+    GPIO_PORTF_IS_R = 0x00; // interrupt sensitivity - edge
+    GPIO_PORTF_IEV_R = 0x00; // GPIO Interrupt triggered at negative edge from Pulled-Up Switch
+    GPIO_PORTF_IM_R = 0x10; // unmasking both switches
 
     SYSCTL_RCGCUART_R |= 0x01; // enabling clock to UART module 0
     SYSCTL_RCGCGPIO_R |= 0x21; // enabling clock to PORTF, A
@@ -81,23 +90,9 @@ int main(void)
 
 void delayus(int us){
     NVIC_ST_RELOAD_R = 16*us;
-//    NVIC_ST_CURRENT_R =
     NVIC_ST_CTRL_R = 0x00000005;
-    while( (NVIC_ST_CTRL_R & 0x00010000) != 0x00010000 ){;} //detecting timer flag
+    while( (NVIC_ST_CTRL_R & 0x00010000) != 0x00010000 ){;}
     NVIC_ST_CTRL_R = 0x00000000;
-}
-
-void INIT_GPIO_PORTF_REGISTERS(){
-    GPIO_PORTF_LOCK_R = 0x4C4F434B;     /* unlock commit register */
-    GPIO_PORTF_CR_R = 0x1F;             /* make PORTF configurable */
-    GPIO_PORTF_DEN_R = 0x1F;            /* set PORTF pins 4 : 0 pins */
-    GPIO_PORTF_DIR_R = 0x0E;            /*  */
-    GPIO_PORTF_PUR_R = 0x11;            /* PORTF0 and PORTF4 are pulled up */
-
-    NVIC_EN0_R = 0x40000000; // 30th bit controls PORTF
-    GPIO_PORTF_IS_R = 0x00; // interrupt sensitivity - edge
-    GPIO_PORTF_IEV_R = 0x00; // GPIO Interrupt triggered at negative edge from Pulled-Up Switch
-    GPIO_PORTF_IM_R = 0x10; // unmasking both switches
 }
 
 void GPIOInterrupt(){
